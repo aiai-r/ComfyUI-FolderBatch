@@ -115,15 +115,9 @@ class FB_LoadVideoFrames:
 
     @classmethod
     def INPUT_TYPES(cls):
-        input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
-        files = folder_paths.filter_files_content_types(files, ["video"])
         return {
             "required": {
                 "video_path": ("STRING", {"default": "", "forceInput": True}),
-            },
-            "optional": {
-                "video": (sorted(files), {"video_upload": True}),
             },
         }
 
@@ -132,11 +126,9 @@ class FB_LoadVideoFrames:
     FUNCTION = "load_video_frames"
     CATEGORY = "FolderBatch/Video"
 
-    def load_video_frames(self, video_path, video=None):
+    def load_video_frames(self, video_path):
         if video_path is not None and str(video_path).strip() != "":
             resolved_path = str(video_path).strip()
-        elif video is not None and str(video).strip() != "":
-            resolved_path = folder_paths.get_annotated_filepath(video)
         else:
             raise ValueError("No video file selected.")
 
