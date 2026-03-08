@@ -14,8 +14,8 @@ class FolderBatchTextQueue {
 
     getTextCount() {
         return new Promise(async (resolve) => {
-            const folder = this.folderWidget.value;
-            const extension = this.extensionWidget.value;
+            const folder = encodeURIComponent(this.folderWidget.value ?? "");
+            const extension = encodeURIComponent(this.extensionWidget.value ?? "");
             const url = API_BASE_URL + `get_text_count?folder=${folder}&extension=${extension}`;
 
             const response = await fetch(url);
