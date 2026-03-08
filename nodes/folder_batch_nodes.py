@@ -513,7 +513,7 @@ class FB_FolderAudioQueue:
 
 class FB_LoadAudioFile:
     """
-    Load audio file content as AUDIO.
+    Load audio file content as AUDIO and durations.
     """
 
     @classmethod
@@ -524,8 +524,8 @@ class FB_LoadAudioFile:
             },
         }
 
-    RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("audio",)
+    RETURN_TYPES = ("AUDIO", "FLOAT", "INT")
+    RETURN_NAMES = ("audio", "duration_float", "duration_int")
     FUNCTION = "load_audio"
     CATEGORY = "FolderBatch/Audio"
 
@@ -535,7 +535,13 @@ class FB_LoadAudioFile:
         else:
             raise ValueError("No audio file selected.")
 
-        return (load_audio_file(resolved_path),)
+        audio = load_audio_file(resolved_path)
+        waveform = audio["waveform"]
+        sample_rate = audio["sample_rate"]
+        duration_float = 0.0 if sample_rate <= 0 else float(waveform.shape[-1]) / float(sample_rate)
+        duration_int = int(round(duration_float))
+
+        return (audio, duration_float, duration_int)
 
 
 class FB_FolderImageQueue:

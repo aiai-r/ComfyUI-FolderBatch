@@ -87,13 +87,15 @@ Outputs
 - audio_count (INT): Total count of matching files.
 
 ### FolderBatch Load Audio
-Load an audio file and output it as AUDIO.
+Load an audio file and output it as AUDIO plus durations.
 
 Inputs (required)
 - audio_path (STRING): Full path to the audio file.
 
 Outputs
 - audio (AUDIO): Loaded audio waveform and sample rate.
+- duration_float (FLOAT): Audio duration in seconds.
+- duration_int (INT): Rounded audio duration in seconds.
 
 ### FolderBatch Image Queue
 Queue image files from a folder, one per execution.
@@ -264,13 +266,15 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 - audio_count (INT): 対象ファイルの総数
 
 ### FolderBatch Load Audio
-音声ファイルを読み込み、AUDIOで出力します。
+音声ファイルを読み込み、AUDIOと長さを出力します。
 
 入力（必須）
 - audio_path (STRING): 音声ファイルのフルパス
 
 出力
 - audio (AUDIO): 読み込んだ音声データ
+- duration_float (FLOAT): 音声の長さ（秒）
+- duration_int (INT): 四捨五入した音声の長さ（秒）
 
 ### FolderBatch Image Queue
 フォルダ内の画像を1つずつキューに流します。
