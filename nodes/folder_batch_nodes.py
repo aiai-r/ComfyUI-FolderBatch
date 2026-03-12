@@ -395,8 +395,12 @@ class FB_LoadTextFile:
         else:
             raise ValueError("No text file selected.")
 
-        with open(resolved_path, "r", encoding="utf-8", errors="replace") as f:
+        # Match manual prompt entry more closely by ignoring UTF-8 BOM
+        # and removing only terminal line breaks commonly added by editors.
+        with open(resolved_path, "r", encoding="utf-8-sig", errors="replace") as f:
             text = f.read()
+
+        text = text.rstrip("\r\n")
 
         return (text,)
 
