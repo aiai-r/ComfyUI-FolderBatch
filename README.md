@@ -40,15 +40,19 @@ Outputs
 - images (IMAGE): Video frames as a batch.
 
 ### FolderBatch Text Queue
-Queue text files from a folder, one per execution.
+Queue text from either a folder or a single file, by file or by line.
 
 Inputs (required)
+- source_mode (folder|file): Use a folder scan or a single text file.
+- unit_mode (file|line): Queue per file or per line.
 - folder (STRING): Folder path to scan.
+- text_path (STRING): Single text file path used when `source_mode=file`.
 - extension (STRING): Glob pattern, default `*.txt`.
 - start_at (INT): Start index (0-based).
 - auto_queue (BOOLEAN): If enabled, triggers next queue automatically.
 - sort_by (Name|Date|Random): Sorting method.
 - order_by (A-Z|Z-A): Sort order.
+- skip_empty_lines (BOOLEAN): Skip blank lines in line mode.
 
 Inputs (optional)
 - text_count (INT): UI display only.
@@ -56,13 +60,16 @@ Inputs (optional)
 
 Outputs
 - text_path (STRING): Full path of the selected text file.
-- text_count (INT): Total count of matching files.
+- text_count (INT): Total count of queued items.
+- line_index (INT): Original 0-based line index, or `-1` in file mode.
 
 ### FolderBatch Load Text
 Load a text file and output its content.
 
 Inputs (required)
 - text_path (STRING): Full path to the text file.
+- line_index (INT): `-1` for full file, otherwise the 0-based line index to load.
+- skip_empty_lines (BOOLEAN): Match line-mode queue behavior when reading by line.
 
 Outputs
 - text (STRING): File content.
@@ -161,9 +168,10 @@ Video batch:
 3) Connect images to your processing nodes
 
 Text batch:
-1) FolderBatch Text Queue -> text_path
-2) FolderBatch Load Text -> text
-3) Connect text to prompt/conditioning nodes
+1) FolderBatch Text Queue -> text_path, line_index
+2) FolderBatch Load Text <- text_path, line_index
+3) Set `skip_empty_lines` on Load Text to match the queue when using line mode
+4) Connect text to prompt/conditioning nodes
 
 Audio batch:
 1) FolderBatch Audio Queue -> audio_path
@@ -219,15 +227,19 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 - images (IMAGE): フレームのバッチ
 
 ### FolderBatch Text Queue
-フォルダ内のtxtを1つずつキューに流します。
+フォルダまたは単一txtを、ファイル単位または行単位でキューに流します。
 
 入力（必須）
+- source_mode (folder|file): フォルダ指定か単一ファイル指定か
+- unit_mode (file|line): ファイル単位か行単位か
 - folder (STRING): 対象フォルダのパス
+- text_path (STRING): `source_mode=file` のときに使うtxtパス
 - extension (STRING): 拡張子のグロブ（例: `*.txt`）
 - start_at (INT): 開始インデックス（0始まり）
 - auto_queue (BOOLEAN): 有効なら自動で次をキュー
 - sort_by (Name|Date|Random): 並び順の基準
 - order_by (A-Z|Z-A): 並び順の向き
+- skip_empty_lines (BOOLEAN): 行単位時に空行を飛ばすか
 
 入力（任意）
 - text_count (INT): UI表示用
@@ -235,13 +247,16 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 
 出力
 - text_path (STRING): 選択されたテキストのフルパス
-- text_count (INT): 対象ファイルの総数
+- text_count (INT): 対象項目の総数
+- line_index (INT): 元の0始まり行番号。fileモードでは `-1`
 
 ### FolderBatch Load Text
 テキストファイルを読み込み、内容をSTRINGで出力します。
 
 入力（必須）
 - text_path (STRING): テキストファイルのフルパス
+- line_index (INT): `-1` なら全文、それ以外は対象の0始まり行番号
+- skip_empty_lines (BOOLEAN): 行単位時の空行スキップ設定に合わせるか
 
 出力
 - text (STRING): ファイル内容
@@ -340,9 +355,10 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 3) 画像処理ノードに接続
 
 テキストバッチ:
-1) FolderBatch Text Queue -> text_path
-2) FolderBatch Load Text -> text
-3) プロンプト/条件ノードに接続
+1) FolderBatch Text Queue -> text_path, line_index
+2) FolderBatch Load Text に text_path, line_index を接続
+3) lineモード時は Load Text の `skip_empty_lines` を Queue 側と合わせる
+4) プロンプト/条件ノードに接続
 
 音声バッチ:
 1) FolderBatch Audio Queue -> audio_path

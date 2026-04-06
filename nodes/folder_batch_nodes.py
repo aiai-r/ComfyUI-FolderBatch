@@ -51,6 +51,79 @@ def get_base_name(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 
+def load_text_content(text_path):
+    with open(text_path, "r", encoding="utf-8-sig", errors="replace") as f:
+        text = f.read()
+
+    return text.rstrip("\r\n")
+
+
+def get_text_lines(text_path, skip_empty_lines=True):
+    text = load_text_content(text_path)
+    lines = text.splitlines()
+
+    entries = []
+    for line_index, line in enumerate(lines):
+        if skip_empty_lines and line.strip() == "":
+            continue
+        entries.append({
+            "text_path": text_path,
+            "text": line,
+            "line_index": line_index,
+        })
+
+    return entries
+
+
+def load_text_line(text_path, line_index, skip_empty_lines=True):
+    lines = get_text_lines(text_path, skip_empty_lines)
+    for entry in lines:
+        if entry["line_index"] == line_index:
+            return entry["text"]
+
+    return ""
+
+
+def build_text_queue_entries(
+    source_mode="folder",
+    unit_mode="file",
+    folder="",
+    text_path="",
+    extension="*.txt",
+    sort_by="Name",
+    order_by="A-Z",
+    skip_empty_lines=True,
+):
+    if source_mode == "file":
+        if text_path is None or str(text_path).strip() == "":
+            return []
+
+        resolved_path = os.path.abspath(str(text_path).strip())
+        if not os.path.isfile(resolved_path):
+            return []
+
+        if unit_mode != "line":
+            raise ValueError("Single file mode only supports unit_mode='line'.")
+
+        return get_text_lines(resolved_path, skip_empty_lines)
+
+    files = get_files(folder, extension, sort_by, order_by)
+    if unit_mode == "file":
+        return [
+            {
+                "text_path": file_path,
+                "line_index": -1,
+            }
+            for file_path in files
+        ]
+
+    entries = []
+    for file_path in files:
+        entries.extend(get_text_lines(file_path, skip_empty_lines))
+
+    return entries
+
+
 def resolve_folder(common_folder, specific_folder):
     if specific_folder is not None and str(specific_folder).strip() != "":
         return str(specific_folder).strip()
@@ -295,23 +368,28 @@ class FB_LoadVideoFrames:
 
 class FB_FolderTextQueue:
     """
-    Folder-based text queue. Emits one text file path per execution.
+    Text queue that can emit one file or one line per execution.
     """
 
     def __init__(self):
         self.is_finished = False
-        self.files = []
+        self.entries = []
+        self.state_key = None
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "source_mode": (["folder", "file"], {"default": "folder"}),
+                "unit_mode": (["file", "line"], {"default": "file"}),
                 "folder": ("STRING", {"default": ""}),
+                "text_path": ("STRING", {"default": ""}),
                 "extension": ("STRING", {"default": "*.txt"}),
                 "start_at": ("INT", {"default": 0, "min": 0}),
                 "auto_queue": ("BOOLEAN", {"default": True}),
                 "sort_by": (["Name", "Date", "Random"], {"default": "Name"}),
                 "order_by": (["A-Z", "Z-A"], {"default": "A-Z"}),
+                "skip_empty_lines": ("BOOLEAN", {"default": True}),
             },
             "optional": {
                 "text_count": ("INT", {"default": 0, "min": 0}),
@@ -319,29 +397,57 @@ class FB_FolderTextQueue:
             },
         }
 
-    RETURN_TYPES = ("STRING", "INT")
-    RETURN_NAMES = ("text_path", "text_count")
+    RETURN_TYPES = ("STRING", "INT", "INT")
+    RETURN_NAMES = ("text_path", "text_count", "line_index")
     FUNCTION = "run"
     CATEGORY = "FolderBatch/Text"
 
     def run(
         self,
+        source_mode="folder",
+        unit_mode="file",
         folder="",
+        text_path="",
         extension="*.txt",
         start_at=0,
         auto_queue=True,
         sort_by="Name",
         order_by="A-Z",
+        skip_empty_lines=True,
         text_count=0,
         progress=0.0,
     ):
-        if len(self.files) <= 0:
-            self.files = get_files(folder, extension, sort_by, order_by)
+        if source_mode == "file" and unit_mode != "line":
+            raise ValueError("source_mode='file' requires unit_mode='line'.")
+
+        state_key = (
+            source_mode,
+            unit_mode,
+            str(folder).strip(),
+            str(text_path).strip(),
+            str(extension).strip(),
+            sort_by,
+            order_by,
+            bool(skip_empty_lines),
+        )
+
+        if len(self.entries) <= 0 or self.state_key != state_key:
+            self.entries = build_text_queue_entries(
+                source_mode=source_mode,
+                unit_mode=unit_mode,
+                folder=folder,
+                text_path=text_path,
+                extension=extension,
+                sort_by=sort_by,
+                order_by=order_by,
+                skip_empty_lines=skip_empty_lines,
+            )
+            self.state_key = state_key
             self.is_finished = False
 
-        if len(self.files) == 0:
+        if len(self.entries) == 0:
             return {
-                "result": ("", 0),
+                "result": ("", 0, -1),
                 "ui": {
                     "text_count": (0,),
                     "start_at": (0,),
@@ -349,20 +455,21 @@ class FB_FolderTextQueue:
                 },
             }
 
-        start_at = max(0, min(start_at, len(self.files) - 1))
-        text_path = self.files[start_at]
-        total = len(self.files)
+        start_at = max(0, min(start_at, len(self.entries) - 1))
+        entry = self.entries[start_at]
+        total = len(self.entries)
 
-        if len(self.files) <= start_at + 1:
+        if len(self.entries) <= start_at + 1:
             self.is_finished = True
-            self.files = []
+            self.entries = []
+            self.state_key = None
 
         progress_val = 0.0
         if total > 0:
             progress_val = (start_at + 1) / total
 
         return {
-            "result": (text_path, total),
+            "result": (entry["text_path"], total, entry["line_index"]),
             "ui": {
                 "text_count": (total,),
                 "start_at": (start_at,),
@@ -381,6 +488,8 @@ class FB_LoadTextFile:
         return {
             "required": {
                 "text_path": ("STRING", {"default": "", "forceInput": True}),
+                "line_index": ("INT", {"default": -1, "min": -1, "forceInput": True}),
+                "skip_empty_lines": ("BOOLEAN", {"default": True}),
             },
         }
 
@@ -389,19 +498,16 @@ class FB_LoadTextFile:
     FUNCTION = "load_text"
     CATEGORY = "FolderBatch/Text"
 
-    def load_text(self, text_path):
+    def load_text(self, text_path, line_index=-1, skip_empty_lines=True):
         if text_path is not None and str(text_path).strip() != "":
             resolved_path = str(text_path).strip()
         else:
             raise ValueError("No text file selected.")
 
-        # Match manual prompt entry more closely by ignoring UTF-8 BOM
-        # and removing only terminal line breaks commonly added by editors.
-        with open(resolved_path, "r", encoding="utf-8-sig", errors="replace") as f:
-            text = f.read()
-
-        text = text.rstrip("\r\n")
-
+        if line_index is not None and int(line_index) >= 0:
+            text = load_text_line(resolved_path, int(line_index), skip_empty_lines)
+        else:
+            text = load_text_content(resolved_path)
         return (text,)
 
 
@@ -843,10 +949,22 @@ async def route_folderbatch_video_get_video_count(request):
 @PromptServer.instance.routes.get("/folderbatch/text-queue/get_text_count")
 async def route_folderbatch_text_get_text_count(request):
     try:
+        source_mode = request.query.get("source_mode", "folder")
+        unit_mode = request.query.get("unit_mode", "file")
         folder = request.query.get("folder")
+        text_path = request.query.get("text_path")
         extension = request.query.get("extension")
-        files = get_files(folder, extension)
-        text_count = len(files)
+        skip_empty_lines = request.query.get("skip_empty_lines", "true").lower() == "true"
+        text_count = len(
+            build_text_queue_entries(
+                source_mode=source_mode,
+                unit_mode=unit_mode,
+                folder=folder,
+                text_path=text_path,
+                extension=extension,
+                skip_empty_lines=skip_empty_lines,
+            )
+        )
     except Exception:
         text_count = 0
 
