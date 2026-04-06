@@ -285,8 +285,8 @@ class FB_FolderVideoQueue:
             },
         }
 
-    RETURN_TYPES = ("STRING", "INT")
-    RETURN_NAMES = ("video_path", "video_count")
+    RETURN_TYPES = ("STRING", "STRING", "INT")
+    RETURN_NAMES = ("video_path", "file_name", "video_count")
     FUNCTION = "run"
     CATEGORY = "FolderBatch/Video"
 
@@ -307,7 +307,7 @@ class FB_FolderVideoQueue:
 
         if len(self.files) == 0:
             return {
-                "result": ("", 0),
+                "result": ("", "", 0),
                 "ui": {
                     "video_count": (0,),
                     "start_at": (0,),
@@ -317,6 +317,7 @@ class FB_FolderVideoQueue:
 
         start_at = max(0, min(start_at, len(self.files) - 1))
         video_path = self.files[start_at]
+        file_name = get_base_name(video_path)
         total = len(self.files)
 
         if len(self.files) <= start_at + 1:
@@ -328,7 +329,7 @@ class FB_FolderVideoQueue:
             progress_val = (start_at + 1) / total
 
         return {
-            "result": (video_path, total),
+            "result": (video_path, file_name, total),
             "ui": {
                 "video_count": (total,),
                 "start_at": (start_at,),
@@ -397,8 +398,8 @@ class FB_FolderTextQueue:
             },
         }
 
-    RETURN_TYPES = ("STRING", "INT", "INT")
-    RETURN_NAMES = ("text_path", "text_count", "line_index")
+    RETURN_TYPES = ("STRING", "STRING", "INT", "INT")
+    RETURN_NAMES = ("text_path", "file_name", "text_count", "line_index")
     FUNCTION = "run"
     CATEGORY = "FolderBatch/Text"
 
@@ -447,7 +448,7 @@ class FB_FolderTextQueue:
 
         if len(self.entries) == 0:
             return {
-                "result": ("", 0, -1),
+                "result": ("", "", 0, -1),
                 "ui": {
                     "text_count": (0,),
                     "start_at": (0,),
@@ -457,6 +458,7 @@ class FB_FolderTextQueue:
 
         start_at = max(0, min(start_at, len(self.entries) - 1))
         entry = self.entries[start_at]
+        file_name = get_base_name(entry["text_path"])
         total = len(self.entries)
 
         if len(self.entries) <= start_at + 1:
@@ -469,7 +471,7 @@ class FB_FolderTextQueue:
             progress_val = (start_at + 1) / total
 
         return {
-            "result": (entry["text_path"], total, entry["line_index"]),
+            "result": (entry["text_path"], file_name, total, entry["line_index"]),
             "ui": {
                 "text_count": (total,),
                 "start_at": (start_at,),
@@ -569,8 +571,8 @@ class FB_FolderAudioQueue:
             },
         }
 
-    RETURN_TYPES = ("STRING", "INT")
-    RETURN_NAMES = ("audio_path", "audio_count")
+    RETURN_TYPES = ("STRING", "STRING", "INT")
+    RETURN_NAMES = ("audio_path", "file_name", "audio_count")
     FUNCTION = "run"
     CATEGORY = "FolderBatch/Audio"
 
@@ -591,7 +593,7 @@ class FB_FolderAudioQueue:
 
         if len(self.files) == 0:
             return {
-                "result": ("", 0),
+                "result": ("", "", 0),
                 "ui": {
                     "audio_count": (0,),
                     "start_at": (0,),
@@ -601,6 +603,7 @@ class FB_FolderAudioQueue:
 
         start_at = max(0, min(start_at, len(self.files) - 1))
         audio_path = self.files[start_at]
+        file_name = get_base_name(audio_path)
         total = len(self.files)
 
         if len(self.files) <= start_at + 1:
@@ -612,7 +615,7 @@ class FB_FolderAudioQueue:
             progress_val = (start_at + 1) / total
 
         return {
-            "result": (audio_path, total),
+            "result": (audio_path, file_name, total),
             "ui": {
                 "audio_count": (total,),
                 "start_at": (start_at,),
@@ -680,8 +683,8 @@ class FB_FolderImageQueue:
             },
         }
 
-    RETURN_TYPES = ("STRING", "INT")
-    RETURN_NAMES = ("image_path", "image_count")
+    RETURN_TYPES = ("STRING", "STRING", "INT")
+    RETURN_NAMES = ("image_path", "file_name", "image_count")
     FUNCTION = "run"
     CATEGORY = "FolderBatch/Image"
 
@@ -702,7 +705,7 @@ class FB_FolderImageQueue:
 
         if len(self.files) == 0:
             return {
-                "result": ("", 0),
+                "result": ("", "", 0),
                 "ui": {
                     "image_count": (0,),
                     "start_at": (0,),
@@ -712,6 +715,7 @@ class FB_FolderImageQueue:
 
         start_at = max(0, min(start_at, len(self.files) - 1))
         image_path = self.files[start_at]
+        file_name = get_base_name(image_path)
         total = len(self.files)
 
         if len(self.files) <= start_at + 1:
@@ -723,7 +727,7 @@ class FB_FolderImageQueue:
             progress_val = (start_at + 1) / total
 
         return {
-            "result": (image_path, total),
+            "result": (image_path, file_name, total),
             "ui": {
                 "image_count": (total,),
                 "start_at": (start_at,),

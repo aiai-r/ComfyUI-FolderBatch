@@ -28,6 +28,7 @@ Inputs (optional)
 
 Outputs
 - video_path (STRING): Full path of the selected video.
+- file_name (STRING): Selected video base name without extension.
 - video_count (INT): Total count of matching files.
 
 ### FolderBatch Load Video Frames
@@ -60,6 +61,7 @@ Inputs (optional)
 
 Outputs
 - text_path (STRING): Full path of the selected text file.
+- file_name (STRING): Selected text base name without extension.
 - text_count (INT): Total count of queued items.
 - line_index (INT): Original 0-based line index, or `-1` in file mode.
 
@@ -91,6 +93,7 @@ Inputs (optional)
 
 Outputs
 - audio_path (STRING): Full path of the selected audio file.
+- file_name (STRING): Selected audio base name without extension.
 - audio_count (INT): Total count of matching files.
 
 ### FolderBatch Load Audio
@@ -121,6 +124,7 @@ Inputs (optional)
 
 Outputs
 - image_path (STRING): Full path of the selected image file.
+- file_name (STRING): Selected image base name without extension.
 - image_count (INT): Total count of matching files.
 
 ### FolderBatch Load Image
@@ -215,6 +219,7 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 
 出力
 - video_path (STRING): 選択された動画のフルパス
+- file_name (STRING): 選択された動画の拡張子なしファイル名
 - video_count (INT): 対象ファイルの総数
 
 ### FolderBatch Load Video Frames
@@ -247,6 +252,7 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 
 出力
 - text_path (STRING): 選択されたテキストのフルパス
+- file_name (STRING): 選択されたテキストの拡張子なしファイル名
 - text_count (INT): 対象項目の総数
 - line_index (INT): 元の0始まり行番号。fileモードでは `-1`
 
@@ -278,6 +284,7 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 
 出力
 - audio_path (STRING): 選択された音声のフルパス
+- file_name (STRING): 選択された音声の拡張子なしファイル名
 - audio_count (INT): 対象ファイルの総数
 
 ### FolderBatch Load Audio
@@ -308,6 +315,7 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 
 出力
 - image_path (STRING): 選択された画像のフルパス
+- file_name (STRING): 選択された画像の拡張子なしファイル名
 - image_count (INT): 対象ファイルの総数
 
 ### FolderBatch Load Image
