@@ -32,13 +32,14 @@ Outputs
 - video_count (INT): Total count of matching files.
 
 ### FolderBatch Load Video Frames
-Load a video and output frames as IMAGE batch.
+Load a video and output frames as IMAGE batch, and also output the original video object.
 
 Inputs (required)
 - video_path (STRING): Full path to the video file.
 
 Outputs
 - images (IMAGE): Video frames as a batch.
+- video (VIDEO): Original video input as ComfyUI VIDEO.
 
 ### FolderBatch Text Queue
 Queue text from either a folder or a single file, by file or by line.
@@ -223,13 +224,14 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 - video_count (INT): 対象ファイルの総数
 
 ### FolderBatch Load Video Frames
-動画を読み込み、フレームをIMAGEバッチで出力します。
+動画を読み込み、フレームをIMAGEバッチで出力し、元動画もVIDEOとして出力します。
 
 入力（必須）
 - video_path (STRING): 動画ファイルのフルパス
 
 出力
 - images (IMAGE): フレームのバッチ
+- video (VIDEO): 元動画の ComfyUI VIDEO
 
 ### FolderBatch Text Queue
 フォルダまたは単一txtを、ファイル単位または行単位でキューに流します。

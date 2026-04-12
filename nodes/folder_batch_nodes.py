@@ -351,8 +351,8 @@ class FB_LoadVideoFrames:
             },
         }
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("images",)
+    RETURN_TYPES = ("IMAGE", "VIDEO")
+    RETURN_NAMES = ("images", "video")
     FUNCTION = "load_video_frames"
     CATEGORY = "FolderBatch/Video"
 
@@ -364,7 +364,7 @@ class FB_LoadVideoFrames:
 
         video_input = VideoFromFile(resolved_path)
         components = video_input.get_components()
-        return (components.images,)
+        return (components.images, video_input)
 
 
 class FB_FolderTextQueue:
