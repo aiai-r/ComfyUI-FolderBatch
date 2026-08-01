@@ -1,0 +1,13 @@
+[project]
+name = "ComfyUI-FolderBatch"
+description = "Folder-based batch queue helpers for ComfyUI"
+version = "1.0.1"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/aiai-r/ComfyUI-FolderBatch"
+
+[tool.comfy]
+PublisherId = "aiaicreate"
+DisplayName = "ComfyUI-FolderBatch"
