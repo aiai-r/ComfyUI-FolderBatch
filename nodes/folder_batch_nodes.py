@@ -10,8 +10,9 @@ from PIL import Image, ImageOps, ImageSequence
 
 import folder_paths
 import node_helpers
+import comfy.model_management
+from comfy_api.latest import InputImpl
 from server import PromptServer
-from comfy_api.latest._input_impl.video_types import VideoFromFile
 
 
 def get_search_patterns(extension):
@@ -301,6 +302,7 @@ class FB_FolderVideoQueue:
     def __init__(self):
         self.is_finished = False
         self.files = []
+        self.state_key = None
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -335,8 +337,11 @@ class FB_FolderVideoQueue:
         video_count=0,
         progress=0.0,
     ):
-        if len(self.files) <= 0:
+        state_key = (str(folder).strip(), str(extension).strip(), sort_by, order_by)
+
+        if len(self.files) <= 0 or self.state_key != state_key:
             self.files = get_files(folder, extension, sort_by, order_by)
+            self.state_key = state_key
             self.is_finished = False
 
         if len(self.files) == 0:
@@ -357,6 +362,7 @@ class FB_FolderVideoQueue:
         if len(self.files) <= start_at + 1:
             self.is_finished = True
             self.files = []
+            self.state_key = None
 
         progress_val = 0.0
         if total > 0:
@@ -396,7 +402,7 @@ class FB_LoadVideoFrames:
         else:
             raise ValueError("No video file selected.")
 
-        video_input = VideoFromFile(resolved_path)
+        video_input = InputImpl.VideoFromFile(resolved_path)
         components = video_input.get_components()
         return (components.images, video_input)
 
@@ -589,6 +595,7 @@ class FB_FolderAudioQueue:
     def __init__(self):
         self.is_finished = False
         self.files = []
+        self.state_key = None
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -623,8 +630,11 @@ class FB_FolderAudioQueue:
         audio_count=0,
         progress=0.0,
     ):
-        if len(self.files) <= 0:
+        state_key = (str(folder).strip(), str(extension).strip(), sort_by, order_by)
+
+        if len(self.files) <= 0 or self.state_key != state_key:
             self.files = get_files(folder, extension, sort_by, order_by)
+            self.state_key = state_key
             self.is_finished = False
 
         if len(self.files) == 0:
@@ -645,6 +655,7 @@ class FB_FolderAudioQueue:
         if len(self.files) <= start_at + 1:
             self.is_finished = True
             self.files = []
+            self.state_key = None
 
         progress_val = 0.0
         if total > 0:
@@ -701,6 +712,7 @@ class FB_FolderImageQueue:
     def __init__(self):
         self.is_finished = False
         self.files = []
+        self.state_key = None
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -735,8 +747,11 @@ class FB_FolderImageQueue:
         image_count=0,
         progress=0.0,
     ):
-        if len(self.files) <= 0:
+        state_key = (str(folder).strip(), str(extension).strip(), sort_by, order_by)
+
+        if len(self.files) <= 0 or self.state_key != state_key:
             self.files = get_files(folder, extension, sort_by, order_by)
+            self.state_key = state_key
             self.is_finished = False
 
         if len(self.files) == 0:
@@ -757,6 +772,7 @@ class FB_FolderImageQueue:
         if len(self.files) <= start_at + 1:
             self.is_finished = True
             self.files = []
+            self.state_key = None
 
         progress_val = 0.0
         if total > 0:
@@ -843,7 +859,9 @@ class FB_LoadImageFile:
             output_image = output_images[0]
             output_mask = output_masks[0]
 
-        return (output_image, output_mask)
+        dtype = comfy.model_management.intermediate_dtype()
+        device = comfy.model_management.intermediate_device()
+        return (output_image.to(device=device, dtype=dtype), output_mask.to(device=device, dtype=dtype))
 
 
 class FB_FolderSyncQueue:
@@ -854,6 +872,7 @@ class FB_FolderSyncQueue:
     def __init__(self):
         self.is_finished = False
         self.entries = []
+        self.state_key = None
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -918,7 +937,15 @@ class FB_FolderSyncQueue:
         item_count=0,
         progress=0.0,
     ):
-        if len(self.entries) <= 0:
+        state_key = (
+            str(common_folder).strip(), sync_mode, missing_policy, sort_by, order_by,
+            bool(use_image), str(image_folder).strip(), str(image_extension).strip(),
+            bool(use_video), str(video_folder).strip(), str(video_extension).strip(),
+            bool(use_text), str(text_folder).strip(), str(text_extension).strip(), text_unit_mode, bool(skip_empty_lines),
+            bool(use_audio), str(audio_folder).strip(), str(audio_extension).strip(),
+        )
+
+        if len(self.entries) <= 0 or self.state_key != state_key:
             configs = build_media_configs(
                 common_folder=common_folder,
                 use_image=use_image,
@@ -943,6 +970,7 @@ class FB_FolderSyncQueue:
                 text_unit_mode,
                 skip_empty_lines,
             )
+            self.state_key = state_key
             self.is_finished = False
 
         if len(self.entries) == 0:
@@ -962,6 +990,7 @@ class FB_FolderSyncQueue:
         if len(self.entries) <= start_at + 1:
             self.is_finished = True
             self.entries = []
+            self.state_key = None
 
         progress_val = 0.0
         if total > 0:

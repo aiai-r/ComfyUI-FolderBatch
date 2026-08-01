@@ -133,11 +133,10 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== "FolderBatch Sync Queue") return;
 
-        const folderSyncQueue = new FolderBatchSyncQueue();
-
         const origOnNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             const r = origOnNodeCreated ? origOnNodeCreated.apply(this) : undefined;
+            const folderSyncQueue = new FolderBatchSyncQueue();
 
             const startAtWidget = findWidgetByName(this, "start_at");
             const autoQueueWidget = findWidgetByName(this, "auto_queue");
@@ -151,6 +150,7 @@ app.registerExtension({
                 autoQueueWidget,
                 progressWidget
             );
+            this.folderBatchQueue = folderSyncQueue;
 
             return r;
         };
@@ -161,7 +161,7 @@ app.registerExtension({
 
             const itemCount = message["item_count"][0];
             const startAt = message["start_at"][0];
-            folderSyncQueue.onExecuted(itemCount, startAt);
+            this.folderBatchQueue.onExecuted(itemCount, startAt);
         };
     },
 });

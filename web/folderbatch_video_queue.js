@@ -84,11 +84,10 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== "FolderBatch Video Queue") return;
 
-        const folderVideoQueue = new FolderBatchVideoQueue();
-
         const origOnNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             const r = origOnNodeCreated ? origOnNodeCreated.apply(this) : undefined;
+            const folderVideoQueue = new FolderBatchVideoQueue();
 
             const folderWidget = findWidgetByName(this, "folder");
             const extensionWidget = findWidgetByName(this, "extension");
@@ -105,6 +104,7 @@ app.registerExtension({
                 autoQueueWidget,
                 progressWidget
             );
+            this.folderBatchQueue = folderVideoQueue;
 
             return r;
         };
@@ -115,7 +115,7 @@ app.registerExtension({
 
             const videoCount = message["video_count"][0];
             const startAt = message["start_at"][0];
-            folderVideoQueue.onExecuted(videoCount, startAt);
+            this.folderBatchQueue.onExecuted(videoCount, startAt);
         };
     },
 });

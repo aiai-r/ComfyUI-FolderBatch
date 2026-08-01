@@ -171,11 +171,10 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== "FolderBatch Text Queue") return;
 
-        const folderTextQueue = new FolderBatchTextQueue();
-
         const origOnNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             const r = origOnNodeCreated ? origOnNodeCreated.apply(this) : undefined;
+            const folderTextQueue = new FolderBatchTextQueue();
 
             const sourceModeWidget = findWidgetByName(this, "source_mode");
             const unitModeWidget = findWidgetByName(this, "unit_mode");
@@ -201,6 +200,7 @@ app.registerExtension({
                 progressWidget,
                 skipEmptyLinesWidget
             );
+            this.folderBatchQueue = folderTextQueue;
 
             return r;
         };
@@ -211,7 +211,7 @@ app.registerExtension({
 
             const textCount = message["text_count"][0];
             const startAt = message["start_at"][0];
-            folderTextQueue.onExecuted(textCount, startAt);
+            this.folderBatchQueue.onExecuted(textCount, startAt);
         };
     },
 });

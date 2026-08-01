@@ -84,11 +84,10 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== "FolderBatch Image Queue") return;
 
-        const folderImageQueue = new FolderBatchImageQueue();
-
         const origOnNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             const r = origOnNodeCreated ? origOnNodeCreated.apply(this) : undefined;
+            const folderImageQueue = new FolderBatchImageQueue();
 
             const folderWidget = findWidgetByName(this, "folder");
             const extensionWidget = findWidgetByName(this, "extension");
@@ -105,6 +104,7 @@ app.registerExtension({
                 autoQueueWidget,
                 progressWidget
             );
+            this.folderBatchQueue = folderImageQueue;
 
             return r;
         };
@@ -115,7 +115,7 @@ app.registerExtension({
 
             const imageCount = message["image_count"][0];
             const startAt = message["start_at"][0];
-            folderImageQueue.onExecuted(imageCount, startAt);
+            this.folderBatchQueue.onExecuted(imageCount, startAt);
         };
     },
 });

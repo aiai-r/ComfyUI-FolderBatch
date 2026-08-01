@@ -84,11 +84,10 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== "FolderBatch Audio Queue") return;
 
-        const folderAudioQueue = new FolderBatchAudioQueue();
-
         const origOnNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             const r = origOnNodeCreated ? origOnNodeCreated.apply(this) : undefined;
+            const folderAudioQueue = new FolderBatchAudioQueue();
 
             const folderWidget = findWidgetByName(this, "folder");
             const extensionWidget = findWidgetByName(this, "extension");
@@ -105,6 +104,7 @@ app.registerExtension({
                 autoQueueWidget,
                 progressWidget
             );
+            this.folderBatchQueue = folderAudioQueue;
 
             return r;
         };
@@ -115,7 +115,7 @@ app.registerExtension({
 
             const audioCount = message["audio_count"][0];
             const startAt = message["start_at"][0];
-            folderAudioQueue.onExecuted(audioCount, startAt);
+            this.folderBatchQueue.onExecuted(audioCount, startAt);
         };
     },
 });
