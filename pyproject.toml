@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-FolderBatch"
 description = "Folder-based batch queue helpers for ComfyUI"
-version = "1.0.1"
+version = "1.0.2"
 license = { file = "LICENSE" }
 dependencies = []
 
