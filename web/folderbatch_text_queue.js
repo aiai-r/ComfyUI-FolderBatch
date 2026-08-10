@@ -32,6 +32,7 @@ class FolderBatchTextQueue {
     textPathWidget;
     extensionWidget;
     startAtWidget;
+    repeatIndexWidget;
     textCountWidget;
     autoQueueWidget;
     progressWidget;
@@ -92,16 +93,25 @@ class FolderBatchTextQueue {
         }
     }
 
-    refreshProgress(startAt) {
+    refreshProgress(startAt, repeatCount, repeatIndex) {
         if (this.progressWidget && this.textCount > 0) {
-            this.progressWidget.value = (startAt + 1) / this.textCount;
+            this.progressWidget.value = (startAt * repeatCount + repeatIndex + 1) / (this.textCount * repeatCount);
         }
     }
 
-    async onExecuted(textCount, startAt) {
-        if (startAt + 1 < textCount) {
+    async onExecuted(textCount, startAt, repeatCount, repeatIndex) {
+        if (repeatIndex + 1 < repeatCount) {
+            this.repeatIndexWidget.value = repeatIndex + 1;
+            this.refreshProgress(startAt, repeatCount, repeatIndex);
+
+            if (this.autoQueueWidget.value) {
+                await sleep(200);
+                app.queuePrompt(0, 1);
+            }
+        } else if (startAt + 1 < textCount) {
             this.startAtWidget.value = startAt + 1;
-            this.refreshProgress(startAt);
+            this.repeatIndexWidget.value = 0;
+            this.refreshProgress(startAt, repeatCount, repeatIndex);
 
             if (this.autoQueueWidget.value) {
                 await sleep(200);
@@ -109,13 +119,14 @@ class FolderBatchTextQueue {
             }
         } else if (startAt + 1 >= textCount) {
             this.startAtWidget.value = 0;
+            this.repeatIndexWidget.value = 0;
             if (this.progressWidget) {
                 this.progressWidget.value = 0;
             }
         }
     }
 
-    initWidget(node, sourceModeWidget, unitModeWidget, folderWidget, textPathWidget, extensionWidget, startAtWidget, textCountWidget, autoQueueWidget, progressWidget, skipEmptyLinesWidget) {
+    initWidget(node, sourceModeWidget, unitModeWidget, folderWidget, textPathWidget, extensionWidget, startAtWidget, textCountWidget, autoQueueWidget, progressWidget, repeatIndexWidget, skipEmptyLinesWidget) {
         this.sourceModeWidget = sourceModeWidget;
         this.unitModeWidget = unitModeWidget;
         this.folderWidget = folderWidget;
@@ -125,6 +136,7 @@ class FolderBatchTextQueue {
         this.textCountWidget = textCountWidget;
         this.autoQueueWidget = autoQueueWidget;
         this.progressWidget = progressWidget;
+        this.repeatIndexWidget = repeatIndexWidget;
         this.skipEmptyLinesWidget = skipEmptyLinesWidget;
 
         sourceModeWidget.callback = async () => {
@@ -185,6 +197,7 @@ app.registerExtension({
             const autoQueueWidget = findWidgetByName(this, "auto_queue");
             const textCountWidget = findWidgetByName(this, "text_count");
             const progressWidget = findWidgetByName(this, "progress");
+            const repeatIndexWidget = findWidgetByName(this, "repeat_index");
             const skipEmptyLinesWidget = findWidgetByName(this, "skip_empty_lines");
 
             folderTextQueue.initWidget(
@@ -198,6 +211,7 @@ app.registerExtension({
                 textCountWidget,
                 autoQueueWidget,
                 progressWidget,
+                repeatIndexWidget,
                 skipEmptyLinesWidget
             );
             this.folderBatchQueue = folderTextQueue;
@@ -211,7 +225,9 @@ app.registerExtension({
 
             const textCount = message["text_count"][0];
             const startAt = message["start_at"][0];
-            this.folderBatchQueue.onExecuted(textCount, startAt);
+            const repeatCount = message["repeat_count"][0];
+            const repeatIndex = message["repeat_index"][0];
+            this.folderBatchQueue.onExecuted(textCount, startAt, repeatCount, repeatIndex);
         };
     },
 });

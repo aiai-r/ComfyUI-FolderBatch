@@ -24,6 +24,23 @@ folder_batch_nodes = importlib.import_module("ComfyUI-FolderBatch.nodes.folder_b
 
 
 class QueueStateTests(unittest.TestCase):
+    def test_text_queue_repeats_each_entry_before_finishing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, "a.txt").write_text("a", encoding="utf-8")
+            Path(folder, "b.txt").write_text("b", encoding="utf-8")
+            queue = folder_batch_nodes.FB_FolderTextQueue()
+
+            first = queue.run(folder=folder, repeat_count=2, repeat_index=0, auto_queue=False)
+            repeated = queue.run(folder=folder, repeat_count=2, repeat_index=1, auto_queue=False)
+            second = queue.run(folder=folder, start_at=1, repeat_count=2, repeat_index=0, auto_queue=False)
+
+            self.assertEqual(os.path.basename(first["result"][0]), "a.txt")
+            self.assertEqual(os.path.basename(repeated["result"][0]), "a.txt")
+            self.assertEqual(os.path.basename(second["result"][0]), "b.txt")
+            self.assertEqual(first["ui"]["progress"], (0.25,))
+            self.assertEqual(repeated["ui"]["progress"], (0.5,))
+            self.assertEqual(second["ui"]["progress"], (0.75,))
+
     def test_media_queues_refresh_when_folder_changes(self):
         queue_types = (
             folder_batch_nodes.FB_FolderVideoQueue,

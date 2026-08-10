@@ -435,6 +435,8 @@ class FB_FolderTextQueue:
             "optional": {
                 "text_count": ("INT", {"default": 0, "min": 0}),
                 "progress": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "repeat_count": ("INT", {"default": 1, "min": 1}),
+                "repeat_index": ("INT", {"default": 0, "min": 0}),
             },
         }
 
@@ -457,6 +459,8 @@ class FB_FolderTextQueue:
         skip_empty_lines=True,
         text_count=0,
         progress=0.0,
+        repeat_count=1,
+        repeat_index=0,
     ):
         if source_mode == "file" and unit_mode != "line":
             raise ValueError("source_mode='file' requires unit_mode='line'.")
@@ -493,22 +497,26 @@ class FB_FolderTextQueue:
                     "text_count": (0,),
                     "start_at": (0,),
                     "progress": (0.0,),
+                    "repeat_count": (max(1, repeat_count),),
+                    "repeat_index": (0,),
                 },
             }
 
         start_at = max(0, min(start_at, len(self.entries) - 1))
+        repeat_count = max(1, repeat_count)
+        repeat_index = max(0, min(repeat_index, repeat_count - 1))
         entry = self.entries[start_at]
         file_name = get_base_name(entry["text_path"])
         total = len(self.entries)
 
-        if len(self.entries) <= start_at + 1:
+        if len(self.entries) <= start_at + 1 and repeat_index + 1 >= repeat_count:
             self.is_finished = True
             self.entries = []
             self.state_key = None
 
         progress_val = 0.0
         if total > 0:
-            progress_val = (start_at + 1) / total
+            progress_val = (start_at * repeat_count + repeat_index + 1) / (total * repeat_count)
 
         return {
             "result": (entry["text_path"], file_name, total, entry["line_index"]),
@@ -516,6 +524,8 @@ class FB_FolderTextQueue:
                 "text_count": (total,),
                 "start_at": (start_at,),
                 "progress": (progress_val,),
+                "repeat_count": (repeat_count,),
+                "repeat_index": (repeat_index,),
             },
         }
 

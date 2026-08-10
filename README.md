@@ -59,6 +59,8 @@ Inputs (required)
 Inputs (optional)
 - text_count (INT): UI display only.
 - progress (FLOAT): UI display only (0.0 - 1.0).
+- repeat_count (INT): Number of executions per text item before advancing.
+- repeat_index (INT): Current 0-based repetition index for queue state.
 
 Outputs
 - text_path (STRING): Full path of the selected text file.
@@ -256,6 +258,8 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 入力（任意）
 - text_count (INT): UI表示用
 - progress (FLOAT): UI表示用（0.0 - 1.0）
+- repeat_count (INT): 次のテキストへ進むまでの実行回数
+- repeat_index (INT): キュー状態として保持する現在の繰り返し位置（0始まり）
 
 出力
 - text_path (STRING): 選択されたテキストのフルパス
