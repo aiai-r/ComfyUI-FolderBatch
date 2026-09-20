@@ -879,6 +879,11 @@ class FB_FolderSyncQueue:
     Folder-based synchronized queue for image, video, text, and audio.
     """
 
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        """A queue advances on every prompt, so its output is not cacheable."""
+        return float("nan")
+
     def __init__(self):
         self.is_finished = False
         self.entries = []
