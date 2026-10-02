@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import sys
 import tempfile
@@ -8,7 +9,7 @@ from unittest import mock
 
 import torch
 from aiohttp import web
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from server import PromptServer
@@ -85,12 +86,49 @@ class ImageLoaderTests(unittest.TestCase):
                 mock.patch.object(folder_batch_nodes.comfy.model_management, "intermediate_dtype", return_value=torch.float16),
                 mock.patch.object(folder_batch_nodes.comfy.model_management, "intermediate_device", return_value=torch.device("cpu")),
             ):
-                image, mask = folder_batch_nodes.FB_LoadImageFile().load_image(str(image_path))
+                image, mask, positive, negative = folder_batch_nodes.FB_LoadImageFile().load_image(str(image_path))
 
             self.assertEqual(image.dtype, torch.float16)
             self.assertEqual(mask.dtype, torch.float16)
             self.assertEqual(image.device.type, "cpu")
             self.assertEqual(mask.device.type, "cpu")
+            self.assertEqual((positive, negative), ("", ""))
+
+    def test_png_prompts_preserve_image_and_alpha(self):
+        with tempfile.TemporaryDirectory() as folder:
+            image_path = Path(folder, "image.png")
+            metadata = PngImagePlugin.PngInfo()
+            metadata.add_text("parameters", "cat\nJapanese 日本語\nNegative prompt: blur\nbad hands\nSteps: 20, Seed: 42")
+            Image.new("RGBA", (4, 3), (255, 0, 0, 0)).save(image_path, pnginfo=metadata)
+            image, mask, positive, negative = folder_batch_nodes.FB_LoadImageFile().load_image(str(image_path))
+            self.assertEqual(tuple(image.shape), (1, 3, 4, 3))
+            self.assertTrue(torch.all(image[..., 0] == 1))
+            self.assertTrue(torch.all(image[..., 1:] == 0))
+            self.assertTrue(torch.all(mask == 1))
+            self.assertEqual(positive, "cat\nJapanese 日本語\n")
+            self.assertEqual(negative, "blur\nbad hands\n")
+
+    def test_png_metadata_formats(self):
+        graph = {
+            "1": {"class_type": "KSampler", "inputs": {"positive": ["2", 0], "negative": ["3", 0]}},
+            "2": {"class_type": "CLIPTextEncode", "inputs": {"text": "cat"}},
+            "3": {"class_type": "CLIPTextEncode", "inputs": {"text": "blur"}},
+        }
+        cases = [
+            ({"parameters": "cat\nSteps: 20, Seed: 1"}, ("cat\n", "")),
+            ({"positive_prompt": '"cat"', "negative_prompt": '"blur"'}, ("cat", "blur")),
+            ({"prompt": json.dumps(graph)}, ("cat", "blur")),
+            ({"Software": "NovelAI", "Comment": json.dumps({"prompt": "cat", "uc": "blur"})}, ("cat", "blur")),
+            ({"prompt": "broken JSON"}, ("", "")),
+            ({"Software": "NovelAI", "Comment": "broken JSON"}, ("", "")),
+        ]
+        for metadata, expected in cases:
+            with self.subTest(metadata=metadata):
+                self.assertEqual(folder_batch_nodes.extract_image_prompts(metadata), expected)
+
+        graph["2"]["inputs"]["text"] = ["2", 0]
+        del graph["3"]
+        self.assertEqual(folder_batch_nodes.extract_image_prompts({"prompt": json.dumps(graph)}), ("", ""))
 
 
 if __name__ == "__main__":

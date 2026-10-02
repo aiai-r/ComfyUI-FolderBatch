@@ -332,7 +332,7 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 - image_count (INT): 対象ファイルの総数
 
 ### FolderBatch Load Image
-画像ファイルを読み込み、IMAGEとMASKで出力します。
+画像ファイルを読み込み、IMAGE・MASKとPNGメタデータ内のプロンプトを出力します。
 
 入力（必須）
 - image_path (STRING): 画像ファイルのフルパス
@@ -340,6 +340,10 @@ ComfyUIでフォルダ内のファイルを1つずつキューに流し込むた
 出力
 - image (IMAGE): 読み込んだ画像
 - mask (MASK): アルファ由来のマスク。なければ空マスク
+- positive (STRING): メタデータ内のpositiveプロンプト。取得できない場合は空文字
+- negative (STRING): メタデータ内のnegativeプロンプト。取得できない場合は空文字
+
+A1111／Forgeの `parameters`、`positive_prompt`／`negative_prompt`、ComfyUIのKSampler入力、NovelAIの `Comment` に対応します。ComfyUIはD2 Load Imageと同様、最初に見つかったKSamplerからテキスト入力を辿ります。
 
 ### FolderBatch Sync Queue
 画像・動画・テキスト・音声を同期してキューに流します。

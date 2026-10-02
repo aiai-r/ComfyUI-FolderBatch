@@ -2,6 +2,7 @@ import os
 import json
 import glob
 import random
+import re
 import av
 import numpy as np
 import torch
@@ -798,9 +799,63 @@ class FB_FolderImageQueue:
         }
 
 
+def extract_image_prompts(metadata):
+    """Read PNG prompt metadata (the formats supported by D2 Load Image)."""
+    parameters = metadata.get("parameters")
+    if isinstance(parameters, str):
+        parts = re.split(r"Negative prompt: *|Steps: ", parameters)
+        return parts[0], parts[1] if "Negative prompt:" in parameters else ""
+
+    if "positive_prompt" in metadata and "negative_prompt" in metadata:
+        return tuple(
+            value[1:-1] if value.startswith('"') and value.endswith('"') else value
+            for value in (metadata["positive_prompt"], metadata["negative_prompt"])
+        )
+
+    if "prompt" in metadata:
+        try:
+            graph = json.loads(metadata["prompt"])
+        except (ValueError, TypeError):
+            return "", ""
+        if isinstance(graph, dict):
+            for node_id, node in graph.items():
+                if isinstance(node, dict) and "KSampler" in str(node.get("class_type", "")):
+                    return tuple(extract_comfy_prompt(graph, node_id, kind) for kind in ("positive", "negative"))
+
+    if metadata.get("Software") == "NovelAI":
+        try:
+            comment = json.loads(metadata.get("Comment", ""))
+        except (ValueError, TypeError):
+            return "", ""
+        if isinstance(comment, dict):
+            return tuple(value if isinstance(value, str) else "" for value in (comment.get("prompt", ""), comment.get("uc", "")))
+
+    return "", ""
+
+
+def extract_comfy_prompt(graph, node_id, kind):
+    visited = set()
+    while str(node_id) not in visited:
+        node_id = str(node_id)
+        visited.add(node_id)
+        node = graph.get(node_id)
+        if not isinstance(node, dict) or not isinstance(node.get("inputs"), dict):
+            return ""
+        for key, value in node["inputs"].items():
+            if kind in key or "text" in key:
+                if isinstance(value, str):
+                    return value
+                if isinstance(value, list) and len(value) == 2:
+                    node_id = value[0]
+                    break
+        else:
+            return ""
+    return ""
+
+
 class FB_LoadImageFile:
     """
-    Load image file content as IMAGE and MASK.
+    Load image file content and embedded positive/negative prompts.
     """
 
     @classmethod
@@ -811,8 +866,8 @@ class FB_LoadImageFile:
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "MASK")
-    RETURN_NAMES = ("image", "mask")
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING", "STRING")
+    RETURN_NAMES = ("image", "mask", "positive", "negative")
     FUNCTION = "load_image"
     CATEGORY = "FolderBatch/Image"
 
@@ -823,6 +878,7 @@ class FB_LoadImageFile:
             raise ValueError("No image file selected.")
 
         img = node_helpers.pillow(Image.open, resolved_path)
+        positive, negative = extract_image_prompts(img.info)
 
         output_images = []
         output_masks = []
@@ -871,7 +927,7 @@ class FB_LoadImageFile:
 
         dtype = comfy.model_management.intermediate_dtype()
         device = comfy.model_management.intermediate_device()
-        return (output_image.to(device=device, dtype=dtype), output_mask.to(device=device, dtype=dtype))
+        return (output_image.to(device=device, dtype=dtype), output_mask.to(device=device, dtype=dtype), positive, negative)
 
 
 class FB_FolderSyncQueue:
