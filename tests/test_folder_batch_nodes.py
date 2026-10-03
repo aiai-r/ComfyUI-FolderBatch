@@ -75,6 +75,25 @@ class QueueStateTests(unittest.TestCase):
             self.assertEqual(os.path.basename(first_result["result"][1]), "a.png")
             self.assertEqual(os.path.basename(second_result["result"][1]), "c.png")
 
+    def test_sync_queue_restarts_with_full_count_after_completion(self):
+        with tempfile.TemporaryDirectory() as folder:
+            for name in ("a.png", "b.png", "c.png", "d.png"):
+                Path(folder, name).touch()
+
+            queue = folder_batch_nodes.FB_FolderSyncQueue()
+            results = [
+                queue.run(folder, use_image=True, start_at=index, auto_queue=False)
+                for index in range(4)
+            ]
+            restarted = queue.run(folder, use_image=True, start_at=0, auto_queue=False)
+
+            self.assertEqual([result["result"][-1] for result in results], [4] * 4)
+            self.assertEqual(restarted["result"][-1], 4)
+
+    def test_sync_queue_disables_comfyui_output_cache(self):
+        changed = folder_batch_nodes.FB_FolderSyncQueue.IS_CHANGED()
+        self.assertTrue(changed != changed)  # NaN is intentionally unequal to itself.
+
 
 class ImageLoaderTests(unittest.TestCase):
     def test_image_uses_intermediate_dtype_and_device(self):
