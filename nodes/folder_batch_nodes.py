@@ -300,6 +300,11 @@ class FB_FolderVideoQueue:
     Folder-based video queue. Emits one video path per execution.
     """
 
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        """A queue advances on every prompt, so its output is not cacheable."""
+        return float("nan")
+
     def __init__(self):
         self.is_finished = False
         self.files = []
@@ -412,6 +417,11 @@ class FB_FolderTextQueue:
     """
     Text queue that can emit one file or one line per execution.
     """
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        """A queue advances on every prompt, so its output is not cacheable."""
+        return float("nan")
 
     def __init__(self):
         self.is_finished = False
@@ -603,6 +613,11 @@ class FB_FolderAudioQueue:
     Folder-based audio queue. Emits one audio file path per execution.
     """
 
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        """A queue advances on every prompt, so its output is not cacheable."""
+        return float("nan")
+
     def __init__(self):
         self.is_finished = False
         self.files = []
@@ -719,6 +734,11 @@ class FB_FolderImageQueue:
     """
     Folder-based image queue. Emits one image file path per execution.
     """
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        """A queue advances on every prompt, so its output is not cacheable."""
+        return float("nan")
 
     def __init__(self):
         self.is_finished = False
